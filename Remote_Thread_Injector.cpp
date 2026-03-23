@@ -40,7 +40,7 @@ public:
 	FixedInjector() {
 		isAdmin = CheckAdminPrivileges();
 	}
-	// Performs classic loadlibrary remote thread injection
+	// Typical loadlibrary remote thread injection
 	// 1. Opens target process
 	// 2. Allocates mem for DLL path
 	// 3. write DLL path into process
@@ -53,8 +53,6 @@ public:
 		char currentDir[MAX_PATH];
 		GetCurrentDirectoryA(MAX_PATH, currentDir);
 
-
-		// validates dll path
 		DWORD fileAttrib = GetFileAttributesA(dllPath.c_str());
 		if (fileAttrib == INVALID_FILE_ATTRIBUTES) {
 			std::cout << "[!] Error: DLL not found at: " << currentDir << std::endl;
@@ -81,11 +79,8 @@ public:
 		try {
 			
 			std::cout << "[+] Allocating mem in target process" << std::endl;
-
-			// Make sure DLLpath is null terminated
 			std::string dllPathWithNull = dllPath + '\0';
 			SIZE_T pathSize = dllPathWithNull.size();
-			// allocates memory in the target process
 			LPVOID allocatedMemory = VirtualAllocEx(hProcess, NULL, pathSize, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
 			if (!allocatedMemory) {
@@ -96,8 +91,6 @@ public:
 			}
 
 			std::cout << "[+] Memory allocated at: 0x" << std::hex << allocatedMemory << std::dec << std::endl;
-
-			// write dll path to allocated mem
 			std::cout << "[+] Writing DLL to target process memory" << std::endl;
 
 
@@ -133,8 +126,6 @@ public:
 			}
 
 			std::cout << "[+] LoadLibraryA address: 0x" << std::hex << loadLibraryAddr << std::dec << std::endl;
-
-			// Create remote thread in target process
 			std::cout << "[+] Creating remote thread" << std::endl;
 
 			HANDLE hThread = CreateRemoteThread(hProcess, NULL, 0, (LPTHREAD_START_ROUTINE)loadLibraryAddr, allocatedMemory, 0, NULL);
@@ -148,8 +139,6 @@ public:
 			}
 
 			std::cout << "[+] Remote thread created. Thread handle: " << hThread << std::endl;
-
-			// wait for the thread to finish
 			std::cout << "[+] waiting for thread to complete" << std::endl;
 
 			DWORD waitResult = WaitForSingleObject(hThread, 5000);
@@ -164,8 +153,6 @@ public:
 			else {
 				std::cout << "[+] Thread completed successfully" << std::endl;
 			}
-
-			// Get thread exit code
 			DWORD exitCode = 0;
 			if (GetExitCodeThread(hThread, &exitCode)) {
 				if (exitCode == 0) {
@@ -190,7 +177,6 @@ public:
 			return false;
 		}
 	}
-	// Get process ID
 	DWORD GetProcessID(const std::string& processName) {
 		DWORD pid = 0;
 		HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
@@ -264,8 +250,6 @@ public:
 		}
 	}
 
-
-	// monitor for process and inject
 	void WaitAndInject(const std::string& targetExe, const std::string& dllPath, float checkInterval = 1.0f) {
 		std::cout << "Waiting for " << targetExe << " to start" << std::endl;
 		std::cout << "Press Ctrl+C to stop monitoring\n " << std::endl;
@@ -286,18 +270,14 @@ public:
 						std::string procName = pe32.szExeFile;
 						std::transform(procName.begin(), procName.end(), procName.begin(), ::tolower);
 						DWORD procPID = pe32.th32ProcessID;
-
-						// check that it is the target process, and not already injected
 						if (procName == targetExeLower && injectedPIDs.find(procPID) == injectedPIDs.end()) {
 							std::cout << "\n" << std::string(50, '=') << std::endl;
 							std::cout << "Found " << targetExe << " with PID: " << procPID << std::endl;
 							std::cout << std::string(50, '=') << std::endl;
 
-							//wait for process initialization
 							std::cout << "Waiting for process initialization" << std::endl;
 							std::this_thread::sleep_for(std::chrono::seconds(2));
 
-							//attempt injection
 							if (InjectDLL(procPID, dllPath)) {
 								injectedPIDs.insert(procPID);
 								std::cout << "\n Successfully injected into " << targetExe << " (PID: " << procPID << ")" << std::endl;
@@ -313,8 +293,6 @@ public:
 
 				CloseHandle(hSnapshot);
 			}
-
-			// Remove dead processes from tracking
 			std::set<DWORD> deadPIDs;
 			for (DWORD pid : injectedPIDs) {
 				HANDLE hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
@@ -365,7 +343,6 @@ public:
 		std::string defaultTarget = "notepad.exe";
 		std::string defaultDLL = "C:\\DrawBox.dll";
 
-		// Continuously monitor process list and inject into new instances
 		while (true) {
 			std::cout << "\nOptions:" << std::endl;
 			std::cout << "1. Wait for specific program and inject on startup" << std::endl;
