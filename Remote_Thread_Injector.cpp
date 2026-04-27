@@ -18,8 +18,6 @@
 class FixedInjector {
 	bool isAdmin;
 
-
-	// check admin 
 	bool CheckAdminPrivileges() {
 		BOOL isElevated = FALSE;
 		HANDLE hToken = NULL;
@@ -40,12 +38,12 @@ public:
 	FixedInjector() {
 		isAdmin = CheckAdminPrivileges();
 	}
-	// Typical loadlibrary remote thread injection
-	// 1. Opens target process
-	// 2. Allocates mem for DLL path
-	// 3. write DLL path into process
-	// 4. Finds LoadLibraryA address
-	// 5. Create remote thread to execute loadlibrary
+	// loadlibrary remote thread injection
+	// Opens target process
+	// Allocates mem for DLL path
+	// write DLL path into process
+	// Finds LoadLibraryA address
+	// Create remote thread to execute loadlibrary
 	bool InjectDLL(DWORD pid, const std::string& dllPath) {
 		std::cout << "[+] Attempting to inject DLL into PID: " << pid << std::endl;
 
